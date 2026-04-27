@@ -1,7 +1,4 @@
-import Test from './components/Test.vue'
+import { createApp} from 'vue';
+import Tasks from "./components/Tasks.vue";
 
-const app = createApp({})
-
-app.component('test-component', Test)
-
-app.mount('#app')
+createApp(Tasks).mount('#app');
