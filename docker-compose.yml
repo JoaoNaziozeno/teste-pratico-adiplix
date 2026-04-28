@@ -7,6 +7,9 @@ services:
     working_dir: /var/www
     volumes:
       - .:/var/www
+    ports:
+      - "5173:5173"
+      - "9000:9000"
     depends_on:
       laravel_db:
         condition: service_started
@@ -40,8 +43,7 @@ services:
     working_dir: /var/www
     volumes:
       - .:/var/www
-    ports:
-      - "5173:5173"
+    
     command: tail -f /dev/null
 
 volumes:

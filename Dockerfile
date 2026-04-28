@@ -22,6 +22,9 @@ WORKDIR /var/www
 # Ajusta permissões automaticamente
 RUN chown -R www-data:www-data /var/www
 
+# Expõe a porta do PHP-FPM
+CMD ["php-fpm"]
+
 # cria usuário com UID 1000
 RUN useradd -u 1000 -ms /bin/bash laravel
 

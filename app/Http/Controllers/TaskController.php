@@ -30,11 +30,13 @@ class TaskController extends Controller
      */
     public function store(Request $request)
     {
-        $task = Task::create($request->only([
-            'title' => $request->title,
-            'description' => $request->description,
-            'status' => $request->status ?? false,
-        ]));
+        $request->validate([                            // validação dos campos para garantir que os dados sejam corretos antes de criar a tarefa
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'status' => 'boolean',
+        ]);
+
+        $task = Task::create($request->only(['title', 'description', 'status'])); // cria a tarefa usando os dados validados do request
 
         return response()->json($task);
     }
