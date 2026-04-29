@@ -86,22 +86,27 @@ class TaskController extends Controller
     }
 
 
-    public function attachPerson(Request $request, $taskId)
-    {
+    public function attachPeople(Request $request, $taskId)
+    {   
+        $request->validate([
+            'person_ids' => 'required|array',
+            'person_ids.*' => 'exists:people,id'
+        ]);
+
         $task = Task::findOrFail($taskId);
 
-        $task->people()->attach($request->person_id);
+        $task->people()->syncWithoutDetaching($request->person_ids);
 
-        return response()->json(['message' => 'Pessoa vinculada à tarefa com sucesso']);
+        return response()->json(['message' => 'Pessoa(s) vinculada(s) à tarefa com sucesso']);
     }
 
-    public function detachPerson(Request $request, $taskId)
+    public function detachPeople(Request $request, $taskId)
     {
         $task = Task::findOrFail($taskId);
 
-        $task->people()->detach($request->person_id);
+        $task->people()->detach($request->person_ids);
 
-        return response()->json(['message' => 'Pessoa desvinculada da tarefa com sucesso']);
+        return response()->json(['message' => 'Pessoa(s) desvinculada(s) da tarefa com sucesso']);
     }
 
 }

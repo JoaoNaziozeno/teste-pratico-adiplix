@@ -31,10 +31,13 @@ class PersonController extends Controller
      */
     public function store(Request $request)
     {
-        $person = Person::create([
-            'name' => $request->name,
-            'email' => $request->email,
+        $request->validate([
+            'email' => 'required|email|unique:people',
+            'name' => 'required|string|max:255',
         ]);
+
+        $person = Person::create($request->only(['name', 'email'])); 
+
         return response()->json($person);
     }
 
@@ -61,6 +64,10 @@ class PersonController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $request->validate([
+            'email' => 'required|email|unique:people,email,' . $id,
+            'name' => 'required|string|max:255',
+        ]);
         $person = Person::findOrFail($id);
 
         $person->update($request->only(['name', 'email']));
@@ -80,19 +87,24 @@ class PersonController extends Controller
 
 
     public function attachTask(Request $request, $personId)
-    {
+    {   
+        $request->validate([
+            'task_ids' => 'required|array',
+            'task_ids.*' => 'exists:tasks,id',
+        ]);
+
         $person = Person::findOrFail($personId);
 
-        $person->tasks()->attach($request->task_id);
+        $person->tasks()->attach($request->task_ids);
 
         return response()->json(['message' => 'Tarefa vinculada à pessoa com sucesso']);
     }
 
-    public function detachTask(Request $request, $personId)
+    public function detachTask($personId, $taskId)
     {
         $person = Person::findOrFail($personId);
 
-        $person->tasks()->detach($request->task_id);
+        $person->tasks()->detach($taskId);
 
         return response()->json(['message' => 'Tarefa desvinculada da pessoa com sucesso']);
     }

@@ -13,7 +13,7 @@ class Task extends Model
 
     public function people()
     {
-        return $this->belongsToMany(Person::class);
+        return $this->belongsToMany(Person::class, 'people_task');
     }
 
     /*public function getStatusAttribute()
