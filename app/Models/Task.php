@@ -15,10 +15,4 @@ class Task extends Model
     {
         return $this->belongsToMany(Person::class, 'people_task');
     }
-
-    /*public function getStatusAttribute()
-    {
-        return $this->attributes['status'] ? 'Concluída' : 'Pendente'; // isso servirá para retornar o status como 'Concluída' ou 'Pendente' em vez de true/false
-    }*/
-
 }
