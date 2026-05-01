@@ -1,0 +1,5 @@
+$kind: http-request
+name: teste-pratico-adiplix
+url: ""
+method: GET
+order: 1777486772752

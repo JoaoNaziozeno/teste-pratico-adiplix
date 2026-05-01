@@ -85,22 +85,25 @@ class PersonController extends Controller
         return response()->json(['message' => 'Pessoa excluída com sucesso']);
     }
 
-
-    public function attachTask(Request $request, $personId)
+    public function attachTask(Request $request, int $personId)
     {   
         $request->validate([
             'task_ids' => 'required|array',
-            'task_ids.*' => 'exists:tasks,id',
+            'task_ids.*' => 'integer|exists:tasks,id',
         ]);
 
         $person = Person::findOrFail($personId);
 
-        $person->tasks()->attach($request->task_ids);
+        $person->tasks()->syncWithoutDetaching($request->task_ids);
 
-        return response()->json(['message' => 'Tarefa vinculada à pessoa com sucesso']);
+        return response()->json([
+            'status' => 'sucesso',
+            'message' => 'Tarefa(s) vinculada(s) à pessoa com sucesso',
+            'vinculados' => $request->task_ids,
+            ]);
     }
 
-    public function detachTask($personId, $taskId)
+    public function detachTask(int $personId, int $taskId)
     {
         $person = Person::findOrFail($personId);
 
