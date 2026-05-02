@@ -27,6 +27,8 @@ export default defineConfig({
             host: '127.0.0.1',
         },
         watch: {
+            usePolling:true,
+            interval: 100,
             ignored: ['**/storage/framework/views/**'],
         },
     },
