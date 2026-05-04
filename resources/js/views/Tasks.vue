@@ -1,33 +1,25 @@
 <template>
   <div class="bg-background text-on-background min-h-screen flex">
-    <!-- Reutilizando seus componentes existentes -->
+
     <Sidebar />
 
     <div class="ml-64 min-h-screen flex flex-col flex-1">
       <Header />
 
-      <!-- Page Content -->
       <main class="mt-16 p-6 flex-1 bg-background">
         <div class="max-w-7xl mx-auto">
           
-          <!-- Page Header Actions -->
           <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
-              <h2 class="text-3xl font-bold text-on-surface">Gerenciamento de Tarefas</h2>
-              <p class="text-base text-on-surface-variant">Monitore e organize o fluxo de trabalho da sua organização.</p>
+              <h2 class="text-3xl font-bold text-on-surface">Gerenciar Tarefas</h2>
+              <p class="text-base text-on-surface-variant">Gerencie suas tarefas e pessoas.</p>
             </div>
             
-            <!-- Botão para abrir formulário/modal -->
-            <button 
-              @click="showModal = true"
-              class="inline-flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:opacity-90 active:scale-95 transition-all shadow-sm"
-            >
-              <span class="material-symbols-outlined">add</span>
-              Nova Tarefa
-            </button>
+            <BaseButton @click="showModal = true" icon="add">
+              Adicionar Tarefa
+            </BaseButton>
           </div>
 
-          <!-- Main Data Table Container -->
           <div class="bg-white border border-outline-variant rounded-xl shadow-sm overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse">
@@ -133,9 +125,10 @@
 import api from '../services/api';
 import Sidebar from '../components/Sidebar.vue';
 import Header from '../components/Header.vue';
+import BaseButton from '../components/BaseButton.vue';
 
 export default {
-  components: { Sidebar, Header },
+  components: { Sidebar, Header, BaseButton },
 
   data() {
     return {
