@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-background text-on-background min-h-screen flex">
+  <div class="flex min-h-screen bg-[#f9f9ff] text-[#191b23] font-['Inter']">
 
     <Sidebar />
 
@@ -74,50 +74,56 @@
         </div>
       </main>
     </div>
-
-    <!-- Modal Form (Substituindo o form antigo) -->
+    
     <div v-if="showModal || editingId" class="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
-      <div class="bg-white w-full max-w-md rounded-xl shadow-xl border border-outline-variant overflow-hidden">
-        <div class="px-6 py-4 border-b border-outline-variant flex items-center justify-between">
-          <h3 class="text-xl font-bold text-on-surface">{{ editingId ? 'Editar Tarefa' : 'Criar Nova Tarefa' }}</h3>
-          <button @click="closeModal" class="text-on-surface-variant hover:text-on-surface">
+      <div class="bg-white w-full max-w-md rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+        
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+          <h3 class="text-xl font-bold text-blue-600">{{ editingId ? 'Editar Tarefa' : 'Criar Nova Tarefa' }}</h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
             <span class="material-symbols-outlined">close</span>
           </button>
         </div>
         
         <div class="p-6 space-y-4">
-          <div class="space-y-1.5">
-            <label class="text-sm font-medium text-on-surface">Título da Tarefa</label>
-            <input 
-              v-model="title"
-              class="w-full px-4 py-2 border border-outline-variant rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" 
-              placeholder="Ex: Reunião de Planejamento" 
-              type="text"
-            />
-          </div>
-          <div class="space-y-1.5">
-            <label class="text-sm font-medium text-on-surface">Descrição</label>
-            <textarea 
-              v-model="description"
-              class="w-full px-4 py-2 border border-outline-variant rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" 
-              placeholder="Detalhes da tarefa..." 
-              rows="3"
-            ></textarea>
-          </div>
-          <div class="flex items-center gap-2">
-            <input type="checkbox" v-model="status" id="status" class="rounded border-outline-variant text-primary focus:ring-primary" />
-            <label for="status" class="text-sm font-medium text-on-surface">Marcar como concluída</label>
+          <BaseInput 
+            label="Título da Tarefa" 
+            v-model="title" 
+            placeholder="Ex: Reunião de Planejamento" 
+          />
+
+          <BaseInput 
+            label="Descrição" 
+            v-model="description" 
+            type="textarea" 
+            placeholder="Detalhes da tarefa..." 
+            rows="3" 
+          />
+
+          <BaseMultiSelect 
+            label="Vincular Pessoas"
+            :options="people"
+            v-model="selectedPeople"
+            placeholder="Selecione os responsáveis"
+          />
+
+          <div class="flex items-center gap-2 py-2">
+            <input type="checkbox" v-model="status" id="status" class="w-4 h-4 rounded border-gray-300 text-[#0058be] focus:ring-[#0058be]" />
+            <label for="status" class="text-sm font-medium text-[#424754]">Marcar como concluída</label>
           </div>
         </div>
 
-        <div class="px-6 py-4 bg-gray-50 border-t border-outline-variant flex items-center justify-end gap-3">
-          <button @click="closeModal" class="px-4 py-2 text-on-surface-variant font-medium hover:bg-gray-100 rounded-lg transition-all">Cancelar</button>
-          <button @click="createTask" class="px-6 py-2 bg-primary text-white font-medium rounded-lg hover:opacity-90 transition-all shadow-sm">
-            {{ editingId ? 'Salvar Alterações' : 'Criar Tarefa' }}
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+          <button @click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-all">
+            Cancelar
           </button>
+          <BaseButton @click="createTask" icon="check">
+            {{ editingId ? 'Salvar Alterações' : 'Criar Tarefa' }}
+          </BaseButton>
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -126,9 +132,11 @@ import api from '../services/api';
 import Sidebar from '../components/Sidebar.vue';
 import Header from '../components/Header.vue';
 import BaseButton from '../components/BaseButton.vue';
+import BaseInput from '../components/BaseInput.vue';
+import BaseMultiSelect from '../components/BaseMultiSelect.vue';
 
 export default {
-  components: { Sidebar, Header, BaseButton },
+  components: { Sidebar, Header, BaseButton, BaseInput, BaseMultiSelect },
 
   data() {
     return {
@@ -137,12 +145,15 @@ export default {
       description: '',
       status: false,
       editingId: null,
-      showModal: false // Controle de visibilidade do modal
+      showModal: false,
+      people:[],
+      selectedPeople: []
     }
   },
 
   async mounted() {
     this.getTasks();
+    this.loadPeople();
   },
 
   methods: {
@@ -151,11 +162,16 @@ export default {
       this.tasks = res.data;
     },
 
+    async loadPeople() {
+      const res = await api.get('/people');
+      this.people = res.data;
+    },
+
     async createTask() {
       const payload = {
         title: this.title,
         description: this.description,
-        status: this.status
+        status: this.status,
       };
 
       if (this.editingId) {
@@ -174,6 +190,7 @@ export default {
       this.status = task.status;
       this.editingId = task.id;
       this.showModal = true;
+      this.selectedPeople = task.user ? task.user.map(u => u.id) : [];
     },
 
     async deleteTask(id) {
@@ -199,7 +216,6 @@ export default {
 </script>
 
 <style scoped>
-/* Importando ícones caso não estejam no global */
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }

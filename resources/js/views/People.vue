@@ -20,26 +20,59 @@
             <p class="text-[#424754] mt-1">Gerencie as pessoas e suas tarefas.</p>
           </div>
           
-          <!-- Botão para abrir o formulário (pode ser um modal ou toggle) -->
-          <button @click="showForm = !showForm" class="flex items-center gap-2 bg-[#0058be] text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-sm hover:opacity-90 transition-all">
-            <span class="material-symbols-outlined text-sm">{{ showForm ? 'close' : 'add' }}</span>
-            {{ showForm ? 'Cancelar' : 'Adicionar Pessoas' }}
-          </button>
+          <BaseButton @click="showModal = true" icon="add">
+            Adicionar Pessoa
+          </BaseButton>
+
         </div>
 
-        <!-- Form Inline (Estilo simplificado do Modal do modelo) -->
-        <div v-if="showForm" class="mb-8 bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1.5">
-              <label class="text-xs font-medium text-[#424754]">Nome</label>
-              <input v-model="name" class="w-full px-3 py-2 border border-[#c2c6d6] rounded-lg outline-none focus:border-[#0058be]" type="text"/>
+        <div v-if="showModal || editingId" class="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+          <div class="bg-white w-full max-w-md rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+            
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 class="text-xl font-bold text-blue-600">
+                {{ editingId ? 'Editar Pessoa' : 'Cadastrar Pessoa' }}
+              </h3>
+              <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <span class="material-symbols-outlined">close</span>
+              </button>
             </div>
-            <div class="space-y-1.5">
-              <label class="text-xs font-medium text-[#424754]">E-mail</label>
-              <input v-model="email" class="w-full px-3 py-2 border border-[#c2c6d6] rounded-lg outline-none focus:border-[#0058be]" type="email"/>
+            
+            <!-- Body -->
+            <div class="p-6 space-y-4">
+              <BaseInput 
+                label="Nome Completo" 
+                v-model="name" 
+                placeholder="Ex: João Naziozeno" 
+              />
+
+              <BaseInput 
+                label="E-mail" 
+                v-model="email" 
+                type="email"
+                placeholder="naziozeno@email.com" 
+              />
+
+              <!-- Agora vinculamos Tarefas à Pessoa -->
+              <BaseMultiSelect 
+                label="Atribuir Tarefas"
+                :options="tasks" 
+                v-model="selectedTasks"
+                placeholder="Pesquisar tarefas..."
+              />
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3">
+              <button @click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-all">
+                Cancelar
+              </button>
+              <BaseButton @click="savePerson" icon="person_add">
+                {{ editingId ? 'Salvar Alterações' : 'Cadastrar Pessoa' }}
+              </BaseButton>
             </div>
           </div>
-          <button @click="createPerson" class="bg-[#0058be] text-white px-6 py-2 rounded-lg text-sm font-bold hover:opacity-90">Salvar Cadastro</button>
         </div>
 
         <!-- Stats Overview -->
@@ -64,7 +97,7 @@
               </thead>
               <tbody class="divide-y divide-gray-50">
                 <tr v-for="p in people" :key="p.id" class="hover:bg-gray-50 transition-colors group">
-                  <td class="px-6 py-4 text-sm text-[#424754]">#{{ p.id }}</td>
+                  <td class="px-6 py-4 text-sm text-[#424754]">{{ p.id }}</td>
                   <td class="px-6 py-4">
                     <div class="flex items-center gap-3">
                       <div class="w-8 h-8 rounded-full bg-[#d8e2ff] flex items-center justify-center text-[#0058be] font-bold text-xs">
@@ -76,9 +109,14 @@
                   <td class="px-6 py-4 text-sm text-[#424754]">{{ p.email }}</td>
                   <td class="px-6 py-4 text-right">
                     <div class="flex items-center justify-end gap-2">
+                      <button @click="editPerson(p)" class="p-2 text-on-surface-variant hover:text-primary hover:bg-blue-50 rounded-lg transition-all" title="Editar">
+                        <span class="material-symbols-outlined text-xl">edit</span>
+                      </button>
+
                       <router-link :to="`/people/${p.id}`" class="p-2 text-[#424754] hover:text-[#0058be] hover:bg-blue-50 rounded-lg transition-all" title="Ver Pessoa">
                         <span class="material-symbols-outlined text-sm">visibility</span>
                       </router-link>
+
                       <button @click="deletePerson(p.id)" class="p-2 text-[#424754] hover:text-[#ba1a1a] hover:bg-red-50 rounded-lg transition-all" title="Excluir">
                         <span class="material-symbols-outlined text-sm">delete</span>
                       </button>
@@ -98,28 +136,46 @@
 import api from '../services/api';
 import Sidebar from '../components/Sidebar.vue';
 import Header from '../components/Header.vue';
+import BaseButton from '../components/BaseButton.vue';
+import BaseInput from '../components/BaseInput.vue';
+import BaseMultiSelect from '../components/BaseMultiSelect.vue';
 
 export default {
 
-  components:{Sidebar, Header },
+  components:{Sidebar, Header, BaseButton, BaseInput, BaseMultiSelect },
 
   data() {
     return {
       people: [],
+      tasks: [],
+      selectedTasks: [],
       name: '',
       email: '',
-      showForm: false // Controla a exibição do formulário de cadastro
+      showModal: false
     }
   },
 
   async mounted() {
     this.loadPeople();
+    this.loadTasks();
   },
 
   methods: {
     async loadPeople() {
       const res = await api.get('/people');
       this.people = res.data;
+    },
+
+    async loadTasks() {
+      try {
+        const res = await api.get('/tasks');
+        this.tasks = res.data.map(t => ({ 
+          id: t.id, 
+          name: t.title || t.name 
+        }));
+      } catch (error) {
+        console.error("Erro ao carregar tarefas:", error);
+      }
     },
 
     async createPerson() {
@@ -133,14 +189,59 @@ export default {
       this.people.push(res.data);
       this.name = '';
       this.email = '';
-      this.showForm = false; // Fecha o formulário após criar
+      this.showModal = false;
     },
 
-    async deletePerson(id) {
-      if (confirm("Deseja realmente excluir esta pessoa?")) {
-        await api.delete(`/people/${id}`);
-        this.people = this.people.filter(p => p.id !== id);
-      }
+      async savePerson() {
+        if (!this.name || !this.email) {
+          alert("Nome e E-mail são obrigatórios");
+          return;
+        }
+
+        const payload = {
+          name: this.name,
+          email: this.email,
+          tasks: this.selectedTasks
+        };
+
+        try {
+          if (this.editingId) {
+            await api.put(`/people/${this.editingId}`, payload);
+            alert("Pessoa atualizada com sucesso!");
+          } else {
+            await api.post('/people', payload);
+            alert("Pessoa cadastrada com sucesso!");
+          }
+
+          this.closeModal();
+          this.loadPeople();
+        } catch (error) {
+          console.error("Erro ao salvar pessoa:", error);
+          alert("Ocorreu um erro ao salvar os dados.");
+        }
+      },
+
+      async deletePerson(id) {
+        if (confirm("Tem certeza que deseja excluir esta pessoa?")) {
+          await api.delete(`/people/${id}`);
+          this.loadPeople();
+        }
+      },
+
+    editPerson(person) {
+      this.name = person.name;
+      this.email = person.email;
+      this.selectedTasks = person.tasks ? person.tasks.map(t => t.id) : [];
+      this.editingId = person.id;
+      this.showModal = true;
+    },
+
+    closeModal() {
+      this.showModal = false;
+      this.editingId = null;
+      this.name = '';
+      this.email = '';
+      this.selectedTasks = [];
     }
   }
 }

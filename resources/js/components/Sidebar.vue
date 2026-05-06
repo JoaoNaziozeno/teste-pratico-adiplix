@@ -8,15 +8,15 @@
         </div>
         <div>
           <h1 class="text-lg font-black text-blue-600 leading-none font-bold">TESTE PRÁTICO</h1>
-          <!--<p class="text-[10px]  tracking-widest text-[#424754]">Gerenciamento de Pessoas e Tarefas</p>-->
         </div>
       </div>
       <div class="flex-1 space-y-1">
-        <router-link to="/people" class="flex items-center gap-3 px-4 py-2 text-blue-600 font-bold bg-blue-50 rounded-lg">
+        <router-link to="/people" class="nav-link">
           <span class="material-symbols-outlined">group</span>
           <span class="text-sm">Pessoas</span>
         </router-link>
-        <router-link to="/tasks" class="flex items-center gap-3 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-200/50 rounded-lg transition-all">
+
+        <router-link to="/tasks" class="nav-link">
           <span class="material-symbols-outlined">assignment</span>
           <span class="text-sm">Tarefas</span>
         </router-link>
@@ -31,3 +31,34 @@ export default {
   name: 'Sidebar'
 }
 </script>
+
+<style scoped>
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #4b5563;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  background-color: rgba(229, 231, 235, 0.5);
+  color: #111827;
+}
+
+
+.router-link-active {
+  background-color: #eff6ff !important;
+  color: #2563eb !important; 
+  font-weight: 700;
+}
+
+
+.nav-link:active {
+  transform: scale(0.95);
+}
+</style>
