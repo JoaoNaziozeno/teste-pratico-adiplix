@@ -67,12 +67,18 @@ class PersonController extends Controller
         $request->validate([
             'email' => 'required|email|unique:people,email,' . $id,
             'name' => 'required|string|max:255',
+            'task_ids' => 'nullable|array',
         ]);
+
         $person = Person::findOrFail($id);
 
         $person->update($request->only(['name', 'email']));
 
-        return response()->json($person);
+        if ($request->has('task_ids')) {
+            $person->tasks()->sync($request->task_ids);
+        }
+
+        return response()->json($person->load('tasks'));
     }
 
     /**
@@ -116,28 +122,22 @@ class PersonController extends Controller
             'task_ids.*' => 'integer|exists:tasks,id',
         ]);
 
-        $person->tasks()->sync($request->task_ids);
+        $person->tasks()->syncWithoutDetaching($request->task_ids);
 
         return response()->json([
             'status' => 'Sucesso',
-            'message' => 'Tarefa(s) vinculada(s) à pessoa com sucesso',
+            'message' => 'Tarefa(s) vinculada(s) com sucesso',
             'vinculados' => $request->task_ids,
-            ]);
+        ]);
     }
 
-    public function detachTask(Request $request, Person $person)
+    public function detachTask(Person $person, int $taskId)
     {
-        $request->validate([
-            'task_ids' => 'required|array',
-            'task_ids.*' => 'integer|exists:tasks,id',
-        ]);
-
-        $person->tasks()->detach($request->task_ids);
+        $person->tasks()->detach($taskId);
 
         return response()->json([
             'status' => 'Sucesso',
-            'message' => 'Tarefa(s) desvinculada(s) com sucesso',
-            'removidos' => $request->task_ids
+            'message' => 'Tarefa desvinculada com sucesso',
         ]);
     }
 }

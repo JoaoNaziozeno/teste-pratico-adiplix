@@ -68,7 +68,11 @@
                       <button @click="editTask(task)" class="p-2 text-[#424754] hover:text-[#0058be] hover:bg-blue-50 rounded-lg transition-all">
                         <span class="material-symbols-outlined text-[20px]">edit</span>
                       </button>
-
+                        
+                      <button @click="viewTaskDetails(task.id)" class="p-2 text-[#424754] hover:text-[#0058be] hover:bg-blue-50 rounded-lg transition-all" title="Ver Detalhes da Tarefa">
+                        <span class="material-symbols-outlined text-sm">visibility</span>
+                      </button>
+                      
                       <button @click="deleteTask(task.id)" class="p-2 text-[#424754] hover:text-[#ba1a1a] hover:bg-red-50 rounded-lg transition-all">
                         <span class="material-symbols-outlined text-[20px]">delete</span>
                       </button>
@@ -164,81 +168,136 @@ export default {
   },
 
   methods: {
-    async getTasks() {
-      const res = await api.get('/tasks');
-      this.tasks = res.data;
-    },
+      async getTasks() {
+        const res = await api.get('/tasks');
+        this.tasks = res.data;
+      },
 
-    async loadPeople() {
-      const res = await api.get('/people');
-      this.people = res.data;
-    },
+      async loadPeople() {
+        const res = await api.get('/people');
+        this.people = res.data;
+      },
 
-    async saveTask() {
-      try {
-        let taskId = this.editingId;
-
-        // 1. Salva os dados básicos da tarefa
-        const taskPayload = { 
-          title: this.title, 
-          description: this.description, 
-          status: this.status 
-        };
-
-        if (this.editingId) {
-          await api.put(`/tasks/${this.editingId}`, taskPayload);
-        } else {
-          const resTask = await api.post('/tasks', taskPayload);
-          taskId = resTask.data.id; // Pega o ID da tarefa recém criada
+      // Método unificado para Salvar (Novo ou Edição)
+      async saveTask() {
+        if (!this.title) {
+          alert("Por favor, preencha o título.");
+          return;
         }
 
-        // 2. Chama o vínculo SEPARADO (Como você prefere)
-        await api.post(`/tasks/${taskId}/attach-people`, {
-          people_ids: this.selectedPeople // Deve bater com o seu 'people_ids' do Controller
+        // LIMPEZA DOS IDS:
+        // Se o select devolver objetos, extraímos apenas o ID. 
+        // Se devolver apenas o ID, mantemos o valor.
+        const cleanPeopleIds = this.selectedPeople.map(p => {
+          return typeof p === 'object' ? p.id : p;
         });
 
-        this.closeModal();
-        this.getTasks();
-        alert("Tarefa e vínculos salvos!");
+        const payload = {
+          title: this.title,
+          description: this.description,
+          status: this.status ? 1 : 0,
+          people_ids: cleanPeopleIds // Enviamos o array de números limpo
+        };
 
-      } catch (error) {
-        console.error("Erro no processo:", error);
-      }
-    },
+        try {
+          let response;
 
-    editTask(task) {
-      console.log("Tarefa completa recebida da API:", task); // <--- OLHE ISSO NO CONSOLE
-      
-      this.title = task.title;
-      this.description = task.description;
-      this.status = task.status;
-      this.editingId = task.id;
-      this.showModal = true;
+          if (this.editingId) {
+            // EDIÇÃO: Certifique-se que o editingId não está nulo
+            response = await api.put(`/tasks/${this.editingId}`, payload);
+            console.log("Resposta da Edição:", response.data);
+          } else {
+            // CRIAÇÃO
+            response = await api.post('/tasks', payload);
+            console.log("Resposta da Criação:", response.data);
+          }
 
-      // Se no console você ver 'people_list' ou 'users', mude o nome abaixo:
-      if (task.people && Array.isArray(task.people)) {
-        this.selectedPeople = task.people.map(p => p.id);
-      } else {
+          // Se chegou aqui, deu certo
+          alert(this.editingId ? "Tarefa atualizada!" : "Tarefa criada!");
+          
+          await this.getTasks(); // Recarrega a tabela principal
+          this.closeModal();     // Fecha o modal e limpa os campos
+          
+        } catch (error) {
+          // ANALISE O ERRO NO CONSOLE (F12)
+          console.error("Erro detalhado:", error.response ? error.response.data : error);
+          
+          const msgErro = error.response?.data?.message || "Erro desconhecido no servidor.";
+          alert("Falha ao salvar: " + msgErro);
+        }
+      },
+
+      async deleteTask(id, force = false) {
+        // Define a mensagem com base na tentativa (normal ou forçada)
+        const confirmMsg = force 
+          ? "Esta tarefa possui pessoas vinculadas. Deseja desvincular todos e apagar a tarefa assim mesmo?"
+          : "Tem certeza que deseja excluir esta tarefa?";
+
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          // Se force for true, adicionamos o parâmetro na URL para o Laravel aceitar
+          const url = force ? `/tasks/${id}?force=true` : `/tasks/${id}`;
+          
+          await api.delete(url);
+
+          // Se deu certo, remove da lista na tela
+          this.tasks = this.tasks.filter(t => t.id !== id);
+          
+          if (force) {
+            alert("Tarefa e vínculos removidos com sucesso.");
+          }
+        } catch (error) {
+          // Verifica se o erro é o status 422 (atenção) enviado pelo seu Controller
+          if (error.response && error.response.status === 422 && error.response.data.requires_confirmation) {
+            // Chama a função novamente para a "segunda confirmação"
+            this.deleteTask(id, true);
+          } else {
+            console.error(error);
+            alert("Erro ao excluir tarefa.");
+          }
+        }
+      },
+
+      // Preenche o modal para edição
+      editTask(task) {
+        this.editingId = task.id;
+        this.title = task.title;
+        this.description = task.description;
+        this.status = !!task.status; // Garante que seja booleano
+        
+        // Se o seu backend já retorna a relação 'people' no GET /tasks
+        if (task.people) {
+          this.selectedPeople = task.people.map(p => p.id);
+        } else {
+          this.selectedPeople = [];
+        }
+        
+        this.showModal = true;
+      },
+
+      closeModal() {
+        this.showModal = false;
+        this.editingId = null;
+        this.title = '';
+        this.description = '';
+        this.status = false;
         this.selectedPeople = [];
-      }
-    },
+      },
 
-    closeModal() {
-      this.showModal = false;
-      this.editingId = null;
-      this.title = '';
-      this.description = '';
-      this.status = false;
-      this.selectedPeople = [];
-    },
+      viewPerson(id) {
+        // Redireciona para a página da pessoa (ajuste a rota conforme seu projeto)
+        this.$router.push(`/people/${id}`);
+      },
 
-    resetForm() {
-      this.title = '';
-      this.description = '';
-      this.status = false;
+      viewTaskDetails(id) {
+        // Isso garante que você vá para /tasks/1, /tasks/2, etc.
+        this.$router.push(`/tasks/${id}`);
+      },
+
     }
   }
-}
+
 </script>
 
 <style scoped>

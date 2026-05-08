@@ -30,15 +30,21 @@ class TaskController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([                            // validação dos campos para garantir que os dados sejam corretos antes de criar a tarefa
+        $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'status' => 'boolean',
+            'people_ids' => 'nullable|array',
+            'people_ids.*' => 'integer|exists:people,id',
         ]);
 
-        $task = Task::create($request->only(['title', 'description', 'status'])); // cria a tarefa usando os dados validados do request
+        $task = Task::create($request->only(['title', 'description', 'status']));
 
-        return response()->json($task);
+        if ($request->has('people_ids')) {
+            $task->people()->sync($request->people_ids);
+        }
+
+        return response()->json($task->load('people')); // Retorna com os vínculos para o Vue ver
     }
 
     /**
@@ -68,6 +74,7 @@ class TaskController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'status' => 'boolean',
+            'people_ids' => 'nullable|array',
         ]);
 
         $task = Task::findOrFail($id);
@@ -78,7 +85,11 @@ class TaskController extends Controller
             'status' => $request->status ?? false,
         ]);
 
-        return response()->json($task);
+        if ($request->has('people_ids')) {
+            $task->people()->sync($request->people_ids);
+        }
+
+        return response()->json($task->load('people'));
     }
 
     /**

@@ -133,8 +133,7 @@ import BaseInput from '../components/BaseInput.vue';
 import BaseMultiSelect from '../components/BaseMultiSelect.vue';
 
 export default {
-
-  components:{Sidebar, Header, BaseButton, BaseInput, BaseMultiSelect },
+  components: { Sidebar, Header, BaseButton, BaseInput, BaseMultiSelect },
 
   data() {
     return {
@@ -143,7 +142,8 @@ export default {
       selectedTasks: [],
       name: '',
       email: '',
-      showModal: false
+      showModal: false,
+      editingId: null // Garantindo que o editingId esteja declarado
     }
   },
 
@@ -161,70 +161,79 @@ export default {
     async loadTasks() {
       try {
         const res = await api.get('/tasks');
+        // Prepara as opções para o BaseMultiSelect
         this.tasks = res.data.map(t => ({ 
           id: t.id, 
-          name: t.title || t.name 
+          name: t.title 
         }));
       } catch (error) {
         console.error("Erro ao carregar tarefas:", error);
       }
     },
 
-    async createPerson() {
-      if (!this.name || !this.email) return alert("Preencha todos os campos");
-      
-      const res = await api.post('/people', {
-        name: this.name,
-        email: this.email
+    async savePerson() {
+      if (!this.name || !this.email) {
+        alert("Nome e E-mail são obrigatórios");
+        return;
+      }
+
+      // LIMPEZA DOS IDs (Igual fizemos em Tarefas)
+      const cleanTaskIds = this.selectedTasks.map(t => {
+        return typeof t === 'object' ? t.id : t;
       });
-      
-      this.people.push(res.data);
-      this.name = '';
-      this.email = '';
-      this.showModal = false;
+
+      const payload = {
+        name: this.name,
+        email: this.email,
+        task_ids: cleanTaskIds // Enviando como 'task_ids' para o Controller
+      };
+
+      try {
+        if (this.editingId) {
+          await api.put(`/people/${this.editingId}`, payload);
+          alert("Pessoa atualizada com sucesso!");
+        } else {
+          await api.post('/people', payload);
+          alert("Pessoa cadastrada com sucesso!");
+        }
+
+        this.closeModal();
+        this.loadPeople();
+      } catch (error) {
+        console.error("Erro ao salvar pessoa:", error.response?.data);
+        alert("Erro ao salvar: " + (error.response?.data?.message || "Verifique os dados."));
+      }
     },
 
-      async savePerson() {
-        if (!this.name || !this.email) {
-          alert("Nome e E-mail são obrigatórios");
-          return;
+    // Lógica de exclusão com dupla confirmação (Solução 1)
+    async deletePerson(id, force = false) {
+      const confirmMsg = force 
+        ? "Esta pessoa possui tarefas vinculadas. Deseja desvincular tudo e apagar o registro assim mesmo?"
+        : "Tem certeza que deseja excluir esta pessoa?";
+
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        const url = force ? `/people/${id}?force=true` : `/people/${id}`;
+        await api.delete(url);
+        
+        this.loadPeople();
+        if (force) alert("Pessoa e vínculos removidos.");
+      } catch (error) {
+        // Se o Laravel retornar 422 e pedir confirmação
+        if (error.response && error.response.status === 422 && error.response.data.requires_confirmation) {
+          this.deletePerson(id, true);
+        } else {
+          alert("Erro ao excluir pessoa.");
         }
-
-        const payload = {
-          name: this.name,
-          email: this.email,
-          tasks: this.selectedTasks
-        };
-
-        try {
-          if (this.editingId) {
-            await api.put(`/people/${this.editingId}`, payload);
-            alert("Pessoa atualizada com sucesso!");
-          } else {
-            await api.post('/people', payload);
-            alert("Pessoa cadastrada com sucesso!");
-          }
-
-          this.closeModal();
-          this.loadPeople();
-        } catch (error) {
-          console.error("Erro ao salvar pessoa:", error);
-          alert("Ocorreu um erro ao salvar os dados.");
-        }
-      },
-
-      async deletePerson(id) {
-        if (confirm("Tem certeza que deseja excluir esta pessoa?")) {
-          await api.delete(`/people/${id}`);
-          this.loadPeople();
-        }
-      },
+      }
+    },
 
     editPerson(person) {
+      this.editingId = person.id;
       this.name = person.name;
       this.email = person.email;
       this.selectedTasks = person.tasks ? person.tasks.map(t => t.id) : [];
-      this.editingId = person.id;
       this.showModal = true;
     },
 
