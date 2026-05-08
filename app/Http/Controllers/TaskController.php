@@ -63,7 +63,13 @@ class TaskController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
+    {   
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'status' => 'boolean',
+        ]);
+
         $task = Task::findOrFail($id);
 
         $task->update([
@@ -78,21 +84,43 @@ class TaskController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        Task::destroy($id);
+        $task = Task::findOrFail($id);
 
-        return response()->json(['message' => 'Tarefa deletada com sucesso']);
+        if ($task->people()->exists()) {
+
+            if (!$request->has('force') || $request->force != true) {
+                return response()->json([
+                    'status' => 'attention',
+                    'message' => 'Esta tarefa possui pessoas vinculadas. Deseja desvincular tudo e apagar mesmo assim?',
+                    'requires_confirmation' => true, 
+                    'linked_count' => $task->people()->count()
+                ], 422);
+            }
+
+            $task->people()->detach();
+        }
+
+        $task->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Tarefa e seus vínculos foram removidos com sucesso.'
+        ]);
     }
 
-    public function attachPeople(Request $request, int $taskId)
+    public function listPeople(Task $task)
+    {
+        return response()->json($task->people);
+    }
+
+    public function attachPeople(Request $request, Task $task)
     {   
         $request->validate([
             'people_ids' => 'required|array',
             'people_ids.*' => 'integer|exists:people,id',
         ]);
-
-        $task = Task::findOrFail($taskId);
         
         $task->people()->syncWithoutDetaching($request->people_ids);
         
@@ -103,10 +131,8 @@ class TaskController extends Controller
             ]);
     }
 
-    public function detachPeople(int $taskId, int $personId)
+    public function detachPeople(Task $task, int $personId)
     {
-        $task = Task::findOrFail($taskId);
-
         $task->people()->detach($personId);
 
         return response()->json(['message' => 'Pessoa(s) desvinculada(s) da tarefa com sucesso']);

@@ -13,6 +13,6 @@ class Person extends Model
 
     public function tasks()
     {
-        return $this->belongsToMany(Task::class, 'people_task');
+        return $this->belongsToMany(Task::class, 'people_task')->withTimestamps();
     }
 }

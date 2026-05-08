@@ -6,13 +6,13 @@
     <div class="ml-64 min-h-screen flex flex-col flex-1">
       <Header />
 
-      <main class="mt-16 p-6 flex-1 bg-background">
+      <main class="p-6 flex-1 bg-background">
         <div class="max-w-7xl mx-auto">
           
           <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
             <div>
               <h2 class="text-3xl font-bold text-on-surface">Gerenciar Tarefas</h2>
-              <p class="text-base text-on-surface-variant">Gerencie suas tarefas e pessoas.</p>
+              <p class="text-base text-on-surface-variant">Gerencie as tarefas e vincule  as pessoas.</p>
             </div>
             
             <BaseButton @click="showModal = true" icon="add">
@@ -20,56 +20,63 @@
             </BaseButton>
           </div>
 
-          <div class="bg-white border border-outline-variant rounded-xl shadow-sm overflow-hidden">
-            <div class="overflow-x-auto">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr class="bg-gray-50 border-b border-outline-variant">
-                    <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Título</th>
-                    <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Descrição</th>
-                    <th class="px-6 py-4 text-xs font-semibold text-on-surface-variant uppercase tracking-wider text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-outline-variant">
-                  <tr v-for="task in tasks" :key="task.id" class="hover:bg-gray-50 transition-colors group">
-                    <td class="px-6 py-5">
-                      <div class="flex items-center gap-3">
-                        <div 
-                          :class="task.status ? 'bg-secondary' : 'bg-tertiary-container'" 
-                          class="w-2.5 h-2.5 rounded-full"
-                        ></div>
-                        <span class="text-sm font-medium">{{ task.status ? 'Concluída' : 'Pendente' }}</span>
-                      </div>
-                    </td>
-                    <td class="px-6 py-5">
-                      <span class="text-sm font-semibold text-on-surface">{{ task.title }}</span>
-                    </td>
-                    <td class="px-6 py-5 text-sm text-on-surface-variant max-w-xs truncate">
-                      {{ task.description }}
-                    </td>
-                    <td class="px-6 py-5">
-                      <div class="flex items-center justify-end gap-2">
-                        <button 
-                          @click="editTask(task)"
-                          class="p-2 text-on-surface-variant hover:text-primary hover:bg-blue-50 rounded-lg transition-all" 
-                          title="Editar"
-                        >
-                          <span class="material-symbols-outlined text-xl">edit</span>
-                        </button>
-                        <button 
-                          @click="deleteTask(task.id)"
-                          class="p-2 text-on-surface-variant hover:text-error hover:bg-red-50 rounded-lg transition-all" 
-                          title="Excluir"
-                        >
-                          <span class="material-symbols-outlined text-xl">delete</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-blue-100 p-4 rounded-xl shadow-sm border border-gray-100">
+              <p class="text-[10px] text-[#424754] uppercase font-bold mb-2">Total de tarefas</p>
+              <span class="text-2xl font-bold">{{ tasks.length }}</span>
             </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-gray-100 bg-gray-50/50">
+                  <th class="px-6 py-4 text-xs font-bold text-[#424754] uppercase tracking-wider">ID</th>
+                  <th class="px-6 py-4 text-xs font-bold text-[#424754] uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-4 text-xs font-bold text-[#424754] uppercase tracking-wider">Título</th>
+                  <th class="px-6 py-4 text-xs font-bold text-[#424754] uppercase tracking-wider">Descrição</th>
+                  <th class="px-6 py-4 text-xs font-bold text-[#424754] uppercase tracking-wider text-right">Ações</th>
+                </tr>
+              </thead>
+              
+              <tbody class="divide-y divide-gray-50">
+                <tr v-for="task in tasks" :key="task.id" class="hover:bg-gray-50 transition-colors group">
+                  <td class="px-6 py-4 text-sm text-[#424754]">{{ task.id }}</td>
+                  
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-2">
+                      <div 
+                        :class="task.status ? 'bg-[#00a86b]' : 'bg-amber-500'" 
+                        class="w-2 h-2 rounded-full"
+                      ></div>
+                      <span class="text-sm text-[#424754]">{{ task.status ? 'Concluída' : 'Pendente' }}</span>
+                    </div>
+                  </td>
+
+                  <td class="px-6 py-4">
+                    <span class="font-semibold text-sm text-[#191b23]">{{ task.title }}</span>
+                  </td>
+
+                  <td class="px-6 py-4 text-sm text-[#424754] max-w-xs truncate">
+                    {{ task.description }}
+                  </td>
+
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <button @click="editTask(task)" class="p-2 text-[#424754] hover:text-[#0058be] hover:bg-blue-50 rounded-lg transition-all">
+                        <span class="material-symbols-outlined text-[20px]">edit</span>
+                      </button>
+
+                      <button @click="deleteTask(task.id)" class="p-2 text-[#424754] hover:text-[#ba1a1a] hover:bg-red-50 rounded-lg transition-all">
+                        <span class="material-symbols-outlined text-[20px]">delete</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </main>
@@ -117,7 +124,7 @@
           <button @click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-all">
             Cancelar
           </button>
-          <BaseButton @click="createTask" icon="check">
+          <BaseButton @click="saveTask" icon="check">
             {{ editingId ? 'Salvar Alterações' : 'Criar Tarefa' }}
           </BaseButton>
         </div>
@@ -167,43 +174,62 @@ export default {
       this.people = res.data;
     },
 
-    async createTask() {
-      const payload = {
-        title: this.title,
-        description: this.description,
-        status: this.status,
-      };
+    async saveTask() {
+      try {
+        let taskId = this.editingId;
 
-      if (this.editingId) {
-        await api.put(`/tasks/${this.editingId}`, payload);
-      } else {
-        await api.post('/tasks', payload);
+        // 1. Salva os dados básicos da tarefa
+        const taskPayload = { 
+          title: this.title, 
+          description: this.description, 
+          status: this.status 
+        };
+
+        if (this.editingId) {
+          await api.put(`/tasks/${this.editingId}`, taskPayload);
+        } else {
+          const resTask = await api.post('/tasks', taskPayload);
+          taskId = resTask.data.id; // Pega o ID da tarefa recém criada
+        }
+
+        // 2. Chama o vínculo SEPARADO (Como você prefere)
+        await api.post(`/tasks/${taskId}/attach-people`, {
+          people_ids: this.selectedPeople // Deve bater com o seu 'people_ids' do Controller
+        });
+
+        this.closeModal();
+        this.getTasks();
+        alert("Tarefa e vínculos salvos!");
+
+      } catch (error) {
+        console.error("Erro no processo:", error);
       }
-
-      this.closeModal();
-      this.getTasks();
     },
 
     editTask(task) {
+      console.log("Tarefa completa recebida da API:", task); // <--- OLHE ISSO NO CONSOLE
+      
       this.title = task.title;
       this.description = task.description;
       this.status = task.status;
       this.editingId = task.id;
       this.showModal = true;
-      this.selectedPeople = task.user ? task.user.map(u => u.id) : [];
-    },
 
-    async deleteTask(id) {
-      if(confirm("Deseja realmente excluir esta tarefa?")) {
-        await api.delete(`/tasks/${id}`);
-        this.tasks = this.tasks.filter(t => t.id !== id);
+      // Se no console você ver 'people_list' ou 'users', mude o nome abaixo:
+      if (task.people && Array.isArray(task.people)) {
+        this.selectedPeople = task.people.map(p => p.id);
+      } else {
+        this.selectedPeople = [];
       }
     },
 
     closeModal() {
       this.showModal = false;
       this.editingId = null;
-      this.resetForm();
+      this.title = '';
+      this.description = '';
+      this.status = false;
+      this.selectedPeople = [];
     },
 
     resetForm() {

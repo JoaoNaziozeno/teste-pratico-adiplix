@@ -78,37 +78,66 @@ class PersonController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        Person::destroy($id);
+        $person = Person::findOrFail($id);
 
-        return response()->json(['message' => 'Pessoa excluída com sucesso']);
+        if ($person->tasks()->exists()) {
+
+            if (!$request->has('force') || $request->force != true) {
+                return response()->json([
+                    'status' => 'Atençao',
+                    'message' => 'Esta pessoa possui tarefas vinculadas. Deseja desvincular tudo e apagar mesmo assim?',
+                    'requires_confirmation' => true,
+                    'linked_count' => $person->tasks()->count()
+                ], 422);
+            }
+
+            $person->tasks()->detach();
+        }
+
+        $person->delete();
+
+        return response()->json([
+            'status' => 'Sucesso',
+            'message' => 'Pessoa e seus vínculos foram removidos com sucesso.'
+        ]);
     }
 
-    public function attachTask(Request $request, int $personId)
+    public function listTasks(Person $person)
+    {
+        return response()->json($person->tasks);
+    }
+
+    public function attachTask(Request $request, Person $person)
     {   
         $request->validate([
             'task_ids' => 'required|array',
             'task_ids.*' => 'integer|exists:tasks,id',
         ]);
 
-        $person = Person::findOrFail($personId);
-
-        $person->tasks()->syncWithoutDetaching($request->task_ids);
+        $person->tasks()->sync($request->task_ids);
 
         return response()->json([
-            'status' => 'sucesso',
+            'status' => 'Sucesso',
             'message' => 'Tarefa(s) vinculada(s) à pessoa com sucesso',
             'vinculados' => $request->task_ids,
             ]);
     }
 
-    public function detachTask(int $personId, int $taskId)
+    public function detachTask(Request $request, Person $person)
     {
-        $person = Person::findOrFail($personId);
+        $request->validate([
+            'task_ids' => 'required|array',
+            'task_ids.*' => 'integer|exists:tasks,id',
+        ]);
 
-        $person->tasks()->detach($taskId);
+        $person->tasks()->detach($request->task_ids);
 
-        return response()->json(['message' => 'Tarefa desvinculada da pessoa com sucesso']);
+        return response()->json([
+            'status' => 'Sucesso',
+            'message' => 'Tarefa(s) desvinculada(s) com sucesso',
+            'removidos' => $request->task_ids
+        ]);
     }
 }

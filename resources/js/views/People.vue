@@ -8,22 +8,15 @@
     <Header />
 
       <main class="p-6 max-w-[1280px] mx-auto">
-        <!-- Page Header -->
         <div class="flex items-end justify-between mb-8">
           <div>
-            <nav class="flex items-center gap-2 mb-2 text-[#424754] text-xs">
-              <span>Directory</span>
-              <span class="material-symbols-outlined text-[10px]">chevron_right</span>
-              <span class="text-[#0058be] font-bold">People</span>
-            </nav>
-            <h2 class="text-[30px] font-bold leading-tight">Gerenciador de pessoas</h2>
-            <p class="text-[#424754] mt-1">Gerencie as pessoas e suas tarefas.</p>
+            <h2 class="text-[30px] font-bold leading-tight">Gerenciar Pessoas</h2>
+            <p class="text-[#424754] mt-1">Gerencie as pessoas vinculando às em suas tarefas.</p>
           </div>
           
           <BaseButton @click="showModal = true" icon="add">
             Adicionar Pessoa
           </BaseButton>
-
         </div>
 
         <div v-if="showModal || editingId" class="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
@@ -77,13 +70,12 @@
 
         <!-- Stats Overview -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+          <div class="bg-blue-100 p-4 rounded-xl shadow-sm border border-gray-100">
             <p class="text-[10px] text-[#424754] uppercase font-bold mb-2">Total de Pessoas</p>
             <span class="text-2xl font-bold">{{ people.length }}</span>
           </div>
         </div>
 
-        <!-- Table Container -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
